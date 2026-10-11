@@ -29,3 +29,7 @@ header.nav,header.nav a,header.nav span,header.nav button{color:#000 !important;
   header.nav .navlinks, header.nav nav, header.nav .menu, header.nav .mobile-menu{background:#fff !important;color:#000 !important;}
   header.nav .navlinks a, header.nav nav a, header.nav .menu a, header.nav .mobile-menu a{color:#000 !important;}
 }
+
+/* TAQWA programme link button */
+.taqwa-learn-more{display:inline-block;margin-top:14px;padding:11px 20px;background:#000;color:#fff!important;border-radius:6px;text-decoration:none;font-weight:700;line-height:1.2;transition:background .2s ease}
+.taqwa-learn-more:hover,.taqwa-learn-more:focus-visible{background:#333;color:#fff!important}
