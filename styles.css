@@ -20,3 +20,6 @@
 
 /* Header reset: intentionally plain white */
 header.nav{background:#fff !important;background-image:none !important;}
+
+/* White header typography */
+header.nav,header.nav a,header.nav span,header.nav button{color:#000 !important;}
