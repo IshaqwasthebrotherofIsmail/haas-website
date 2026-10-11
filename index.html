@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<header class="nav" data-bg="header">
+<header class="nav" data-box="header">
   <a class="brand" href="#home"><img data-image="headerLogo" src="assets/haas-symbol.png" alt="HAA(S) symbol"><span data-edit="brand">HAA(S)</span></a>
   <button class="menu" aria-label="Open navigation">☰</button>
   <nav>
@@ -18,14 +18,14 @@
 </header>
 
 <main>
-<section id="home" class="hero">
+<section id="home" class="hero" data-box="hero">
   <img data-image="hero" src="assets/camp.jpg" alt="Horse archery riders during a HAA(S) activity" fetchpriority="high">
   <div class="shade"></div>
-  <div class="hero-copy">
+  <div class="hero-copy" data-box="area1">
     <p class="eyebrow" data-edit="heroEyebrow">HORSEBACK ARCHERY • TRADITIONAL ARCHERY • SINGAPORE</p>
     <h1 data-edit="heroTitle">Tradition in motion.<br>Discipline at full draw.</h1>
     <p data-edit="heroDesc">Developing horseback archery and traditional archery as cultural heritage, athletic discipline and a community for growth.</p>
-    <div class="actions"><a class="btn primary" href="#membership">Join HAA(S)</a><a class="btn ghost" href="#sport">Discover the sport</a></div>
+    <div class="actions" data-box="area2"><a class="btn primary" href="#membership">Join HAA(S)</a><a class="btn ghost" href="#sport">Discover the sport</a></div>
   </div>
 </section>
 
@@ -36,10 +36,10 @@
 </section>
 
 <section id="sport" class="split dark-section" data-box="sport">
-  <div class="photo"><img data-image="sport" src="assets/hero.jpg" alt="Riders training with horses"></div>
-  <div class="copy"><p data-edit="auto4" class="eyebrow">THE DISCIPLINE</p><h2 data-edit="sportTitle">Horse. Bow. Rider.<br>One movement.</h2>
+  <div class="photo" data-box="area3"><img data-image="sport" src="assets/hero.jpg" alt="Riders training with horses"></div>
+  <div class="copy" data-box="area4"><p data-edit="auto4" class="eyebrow">THE DISCIPLINE</p><h2 data-edit="sportTitle">Horse. Bow. Rider.<br>One movement.</h2>
   <p data-edit="auto5">Horseback archery brings equestrian skill and traditional archery together in a demanding discipline built on balance, timing, trust and control.</p>
-  <div class="principles"><span>Discipline</span><span>Safety</span><span>Sportsmanship</span><span>Community</span></div></div>
+  <div class="principles" data-box="area5"><span>Discipline</span><span>Safety</span><span>Sportsmanship</span><span>Community</span></div></div>
 </section>
 
 <section id="programmes" class="section" data-box="programmes">
@@ -79,11 +79,11 @@
 <section id="contact" class="contact" data-box="contact">
   <div class="section"><p data-edit="auto25" class="eyebrow">CONTACT HAA(S)</p><h2 data-edit="contactTitle">Take your next shot.</h2>
   <p data-edit="auto26">For membership, Associate Club, programme, partnership or governance enquiries, contact the Association.</p>
-  <div class="address"><b data-edit="auto27">HAA(S) Office</b><br>1 Yishun Industrial Street 1<br>#03-17 A'Posh BizHub<br>Singapore 768160</div></div>
+  <div class="address" data-box="area6"><b data-edit="auto27">HAA(S) Office</b><br>1 Yishun Industrial Street 1<br>#03-17 A'Posh BizHub<br>Singapore 768160</div></div>
 </section>
 </main>
 
-<footer><img data-image="footerLogo" src="assets/haas-symbol.png" alt=""><div data-box="memberCard7"><b data-edit="auto28">Society of Horse Archery Association (Singapore)</b><br><small data-edit="auto29">HAA(S) • Singapore</small></div><span>Horseback Archery • Traditional Archery</span></footer>
+<footer data-box="footer"><img data-image="footerLogo" src="assets/haas-symbol.png" alt=""><div data-box="memberCard7"><b data-edit="auto28">Society of Horse Archery Association (Singapore)</b><br><small data-edit="auto29">HAA(S) • Singapore</small></div><span>Horseback Archery • Traditional Archery</span></footer>
 <script src="script.js"></script>
 </body>
 </html>
