@@ -41,3 +41,9 @@ header.nav,header.nav a,header.nav span,header.nav button{color:#000 !important;
 .hero > img[data-image="hero"]{transform-origin:center center;animation:haasHeroZoom 20s ease-out both;will-change:transform}
 @keyframes haasHeroZoom{from{transform:scale(1)}to{transform:scale(1.12)}}
 @media(prefers-reduced-motion:reduce){.hero > img[data-image="hero"]{animation:none;transform:none}}
+
+/* Background video: preserve image fallback and hero text overlay. */
+.hero>.hero-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;pointer-events:none}
+.hero>.shade{z-index:2}
+.hero>.hero-copy{position:relative;z-index:3}
+.hero>img[data-image="hero"]{position:absolute;inset:0;animation:none!important;transform:none!important}
