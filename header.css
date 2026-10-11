@@ -1,0 +1,9 @@
+/* Shared navigation matches the homepage across every page. */
+header.nav{height:78px!important;min-height:78px!important;display:flex!important;align-items:center!important;justify-content:space-between!important;padding:0 5vw!important;background:#fff!important;background-image:none!important;color:#000!important;position:sticky!important;top:0!important;z-index:1000!important;border-bottom:1px solid #292929!important;box-sizing:border-box!important;width:100%!important;gap:0!important}
+header.nav .brand{display:flex!important;align-items:center!important;gap:10px!important;color:#000!important;text-decoration:none!important;font-weight:800!important;font-size:18px!important;white-space:nowrap!important}
+header.nav .brand img{width:52px!important;height:52px!important;object-fit:contain!important}
+header.nav nav{display:flex!important;align-items:center!important;gap:28px!important;position:static!important;padding:0!important;box-shadow:none!important;background:transparent!important;flex-direction:row!important}
+header.nav nav a{color:#000!important;text-decoration:none!important;font-family:Arial,Helvetica,sans-serif!important;font-size:13px!important;font-weight:400!important;letter-spacing:.08em!important;text-transform:uppercase!important}
+header.nav nav a:hover{opacity:.65}
+header.nav .menu{display:none!important;background:none!important;border:0!important;color:#000!important;font-size:26px!important;cursor:pointer!important}
+@media(max-width:800px){header.nav nav{display:none!important;position:absolute!important;top:78px!important;left:0!important;right:0!important;background:#fff!important;padding:25px 6vw!important;flex-direction:column!important;align-items:stretch!important;gap:20px!important;box-shadow:0 8px 14px #00000018!important}header.nav nav.open{display:flex!important}header.nav .menu{display:block!important}}
