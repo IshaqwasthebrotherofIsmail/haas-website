@@ -1,37 +1,14 @@
 export default async function handler(req,res){
-  if(req.method!=="POST") return res.status(405).json({error:"Method not allowed"});
-  const token=req.headers.authorization?.replace(/^Bearer\s+/,"");
-  if(!process.env.HAAS_ADMIN_SECRET || token!==process.env.HAAS_ADMIN_SECRET) return res.status(401).json({error:"Unauthorized"});
-  if(!process.env.GITHUB_TOKEN) return res.status(503).json({error:"Publishing is not connected yet"});
-  const {eyebrow,headline,description,primary,secondary,heroImage,headerImage}=req.body||{};
-  const upload=async (img,path)=>{
-    if(!img)return null;
-    const m=String(img).match(/^data:image\/(jpeg|png|webp);base64,(.+)$/);
-    if(!m)throw new Error("Unsupported image");
-    const raw=m[2]; if(raw.length>8_000_000)throw new Error("Image too large");
-    const u="https://api.github.com/repos/IshaqwasthebrotherofIsmail/haas-website/contents/"+path;
-    const old=await fetch(u,{headers:gh}); const oldData=old.ok?await old.json():null;
-    const body={message:"Update website image from HAA(S) editor",content:raw,branch:"main"};
-    if(oldData?.sha)body.sha=oldData.sha;
-    const r=await fetch(u,{method:"PUT",headers:{...gh,"Content-Type":"application/json"},body:JSON.stringify(body)});
-    if(!r.ok)throw new Error("Image publish failed");
-    return path;
-  };
-  const clean=v=>String(v||"").replace(/[<>]/g,"").slice(0,500);
-  const gh={"Authorization":"Bearer "+process.env.GITHUB_TOKEN,"Accept":"application/vnd.github+json","X-GitHub-Api-Version":"2022-11-28"};
-  const heroPath=await upload(heroImage,"assets/editor-hero.jpg");
-  const headerPath=await upload(headerImage,"assets/editor-header.jpg");
-  const url="https://api.github.com/repos/IshaqwasthebrotherofIsmail/haas-website/contents/index.html";
-  const current=await fetch(url,{headers:gh}); if(!current.ok)return res.status(502).json({error:"Could not read site source"});
-  const data=await current.json(); let html=Buffer.from(data.content,"base64").toString("utf8");
-  html=html.replace(/<p class="eyebrow">[\s\S]*?<\/p>/,()=>'<p class="eyebrow">'+clean(eyebrow)+'</p>')
-    .replace(/<h1>[\s\S]*?<\/h1>/,()=>'<h1>'+clean(headline).replace(/\n/g,"<br>")+'</h1>')
-    .replace(/(<div class="hero-copy">[\s\S]*?<h1>[\s\S]*?<\/h1>\s*)<p>[\s\S]*?<\/p>/,(_,a)=>a+'<p>'+clean(description)+'</p>')
-    .replace(/(<a class="btn primary" href="#membership">)[\s\S]*?(<\/a>)/,(_,a,b)=>a+clean(primary)+b)
-     .replace(/(<a class="btn ghost" href="#sport">)[\s\S]*?(<\/a>)/,(_,a,b)=>a+clean(secondary)+b);
-  if(heroPath)html=html.replace(/(<section class="hero">\s*<img src=")[^"]+(")/,(_,a,b)=>a+heroPath+b);
-  if(headerPath)html=html.replace(/(<nav class="nav"[^>]*style="[^"]*background-image:url\(['"]?)[^'")]+/,(_,a)=>a+headerPath);
-  const put=await fetch(url,{method:"PUT",headers:{...gh,"Content-Type":"application/json"},body:JSON.stringify({message:"Publish website content from HAA(S) editor",content:Buffer.from(html).toString("base64"),sha:data.sha,branch:"main"})});
-  if(!put.ok){const e=await put.text();return res.status(502).json({error:"GitHub publish failed",detail:e.slice(0,300)})}
-  return res.status(200).json({ok:true,message:"Published. Vercel deployment triggered."});
-}
+if(req.method!=="POST")return res.status(405).json({error:"Method not allowed"});
+const token=req.headers.authorization?.replace(/^Bearer\\s+/,"");
+if(!process.env.HAAS_ADMIN_SECRET||token!==process.env.HAAS_ADMIN_SECRET)return res.status(401).json({error:"Unauthorized"});
+if(!process.env.GITHUB_TOKEN)return res.status(503).json({error:"Publishing is not connected yet"});
+const gh={"Authorization":"Bearer "+process.env.GITHUB_TOKEN,"Accept":"application/vnd.github+json","X-GitHub-Api-Version":"2022-11-28"};
+const clean=v=>String(v??"").replace(/[<>]/g,"").slice(0,2000),{texts={},images={}}=req.body||{};
+const upload=async(img,path)=>{if(!img)return;const m=String(img).match(/^data:image\/(jpeg|png|webp);base64,(.+)$/);if(!m)throw Error("Unsupported image");if(m[2].length>8000000)throw Error("Image too large");const u="https://api.github.com/repos/IshaqwasthebrotherofIsmail/haas-website/contents/"+path;const old=await fetch(u,{headers:gh}),od=old.ok?await old.json():null,body={message:"Update website image from HAA(S) visual editor",content:m[2],branch:"main"};if(od?.sha)body.sha=od.sha;const r=await fetch(u,{method:"PUT",headers:{...gh,"Content-Type":"application/json"},body:JSON.stringify(body)});if(!r.ok)throw Error("Image publish failed")};
+const map={hero:"assets/editor-hero.jpg",sport:"assets/editor-sport.jpg",taqwa:"assets/editor-taqwa.jpg",training:"assets/editor-training.jpg",camp:"assets/editor-camp.jpg",symbol:"assets/editor-symbol.jpg"};
+for(const k of Object.keys(images))if(map[k])await upload(images[k],map[k]);
+const url="https://api.github.com/repos/IshaqwasthebrotherofIsmail/haas-website/contents/index.html",cur=await fetch(url,{headers:gh});if(!cur.ok)return res.status(502).json({error:"Could not read site source"});const data=await cur.json();let html=Buffer.from(data.content,"base64").toString("utf8");
+for(const [k,v] of Object.entries(texts)){const marker='data-edit="'+k+'"',p=html.indexOf(marker);if(p<0)continue;const gt=html.indexOf(">",p),tag=html.slice(html.lastIndexOf("<",p)+1,p).split(/[ >]/)[0],end=html.indexOf("</"+tag+">",gt);if(gt<0||end<0)continue;html=html.slice(0,gt+1)+clean(v).replace(/\n/g,"<br>")+html.slice(end)}
+for(const [k,path] of Object.entries(map)){if(!images[k])continue;const marker='data-image="'+k+'"',p=html.indexOf(marker),sp=html.indexOf('src="',p);if(p<0||sp<0)continue;const e=html.indexOf('"',sp+5);html=html.slice(0,sp+5)+path+html.slice(e)}
+const put=await fetch(url,{method:"PUT",headers:{...gh,"Content-Type":"application/json"},body:JSON.stringify({message:"Publish website from HAA(S) visual editor",content:Buffer.from(html).toString("base64"),sha:data.sha,branch:"main"})});if(!put.ok)return res.status(502).json({error:"GitHub publish failed"});res.status(200).json({ok:true,message:"Published. Vercel is deploying the update now."})}
