@@ -7,7 +7,7 @@
 .cards article:hover{transform:translateY(-5px);box-shadow:0 22px 55px rgba(0,0,0,.17)}
 .cards img{transition:transform .45s ease}
 .cards article:hover img{transform:scale(1.035)}
-.membership{position:relative;isolation:isolate;background:linear-gradient(90deg,rgba(24,14,27,.92),rgba(43,22,47,.78)),url("assets/hero.jpg") center 48%/cover no-repeat}
+.membership{position:relative;isolation:isolate;background:linear-gradient(90deg,rgba(24,14,27,.92),rgba(43,22,47,.78)),url("assets/hero-selected.webp") center 48%/cover no-repeat}
 .member-grid{background:rgba(255,255,255,.25);gap:12px}
 .member-grid>div{background:rgba(24,16,28,.67);border:1px solid rgba(255,255,255,.2);backdrop-filter:blur(7px)}
 .governance{max-width:none;padding-left:max(6vw,calc((100vw - 1200px)/2 + 6vw));padding-right:7vw;background:linear-gradient(90deg,rgba(246,244,239,.98),rgba(246,244,239,.86) 67%,rgba(246,244,239,.67)),url("assets/camp.jpg") center 30%/cover no-repeat}
