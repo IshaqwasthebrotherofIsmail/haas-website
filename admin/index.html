@@ -10,5 +10,15 @@
 <div class="field"><label>Headline</label><textarea>Tradition in motion.&#10;Discipline at full draw.</textarea></div>
 <div class="field"><label>Description</label><textarea>Developing horseback archery and traditional archery as cultural heritage, athletic discipline and a community for growth.</textarea></div>
 <div class="row"><div class="field"><label>Primary button</label><input value="Join HAA(S)"></div><div class="field"><label>Secondary button</label><input value="Discover the sport"></div></div>
-<button class="btn save" onclick="demo()">Publish changes</button><div class="notice"><b>Editor preview</b><br>This first release gives you the full editing interface safely. Publishing text/images directly to GitHub requires the secure write backend; the public site cannot expose your GitHub credentials.</div></section></div>
-<script>function setWidth(w){document.getElementById('site').style.width=w;document.getElementById('site').style.margin='auto';document.getElementById('site').style.display='block'}function demo(){alert('Editor UI is live. Secure publishing backend is the next connection step — no credentials are stored in this page.')}</script></body></html>
+<button class="btn save" onclick="publishChanges()">Save changes</button><div class="notice"><b>Browser editor enabled</b><br>Changes are saved on this device and applied to the live page immediately in this browser. Server-side publishing is kept separate so no GitHub secret is exposed publicly.</div></section></div>
+<script>
+const fields=[...document.querySelectorAll('.panel input:not([type=file]),.panel textarea')];
+const keys=['eyebrow','headline','description','primary','secondary'];
+const saved=JSON.parse(localStorage.getItem('haas-editor')||'{}');
+fields.forEach((el,i)=>{if(saved[keys[i]]!=null)el.value=saved[keys[i]];el.addEventListener('input',preview)});
+function setWidth(w){const x=document.getElementById('site');x.style.width=w;x.style.margin='auto';x.style.display='block'}
+function preview(){const f=document.getElementById('site');try{const d=f.contentDocument;d.querySelector('.hero .eyebrow').textContent=fields[0].value;d.querySelector('.hero h1').innerHTML=fields[1].value.replace(/\n/g,'<br>');d.querySelector('.hero-copy>p:not(.eyebrow)').textContent=fields[2].value;const a=d.querySelectorAll('.hero .btn');a[0].textContent=fields[3].value;a[1].textContent=fields[4].value}catch(e){}}
+document.getElementById('site').addEventListener('load',preview);
+document.querySelectorAll('input[type=file]').forEach((el,n)=>el.addEventListener('change',()=>{const file=el.files[0];if(!file)return;const u=URL.createObjectURL(file),f=document.getElementById('site');try{const d=f.contentDocument;if(n===0){d.querySelector('.nav').style.backgroundImage='url('+u+')'}else{d.querySelector('.hero>img').src=u}}catch(e){}}));
+function publishChanges(){const data={};fields.forEach((el,i)=>data[keys[i]]=el.value);localStorage.setItem('haas-editor',JSON.stringify(data));preview();alert('Saved. Your edits are stored in this browser.');}
+</script></body></html>
