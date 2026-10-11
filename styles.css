@@ -23,3 +23,9 @@ header.nav{background:#fff !important;background-image:none !important;}
 
 /* White header typography */
 header.nav,header.nav a,header.nav span,header.nav button{color:#000 !important;}
+
+/* Mobile navigation: white panel with black text */
+@media (max-width: 760px){
+  header.nav .navlinks, header.nav nav, header.nav .menu, header.nav .mobile-menu{background:#fff !important;color:#000 !important;}
+  header.nav .navlinks a, header.nav nav a, header.nav .menu a, header.nav .mobile-menu a{color:#000 !important;}
+}
