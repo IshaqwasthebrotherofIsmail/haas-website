@@ -55,7 +55,7 @@ header.nav,header.nav a,header.nav span,header.nav button{color:#000 !important;
 .member-grid .member-card-cta{display:block;margin-top:22px;font-weight:700;font-size:14px;color:#fff;text-decoration:underline;text-underline-offset:4px}
 
 /* Membership cards: slightly more opaque light panels and black text. */
-#membership .member-grid>a.member-card-link{background:rgba(255,255,255,.88);color:#111}
+#membership .member-grid>a.member-card-link{background:rgba(255,255,255,.78);color:#111}
 #membership .member-grid>a.member-card-link b,#membership .member-grid>a.member-card-link p,#membership .member-grid>a.member-card-link .member-card-cta{color:#111}
-#membership .member-grid>a.member-card-link:hover,#membership .member-grid>a.member-card-link:focus-visible{background:rgba(255,255,255,.94);filter:none}
+#membership .member-grid>a.member-card-link:hover,#membership .member-grid>a.member-card-link:focus-visible{background:rgba(255,255,255,.85);filter:none}
 #membership .member-grid>a.member-card-link .member-icon{stroke:#111;color:#111}
