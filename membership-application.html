@@ -48,4 +48,44 @@ header.nav .menu{display:none;background:transparent;border:0;font-size:27px;col
  f.reset();progress();message.textContent='Application submitted successfully. Thank you!';
  }catch(err){message.textContent=err.message+' You may use the original Google Form linked below.'}
  finally{btn.disabled=false;btn.textContent='Submit Application';message.scrollIntoView({behavior:'smooth',block:'center'})}
-});</script><script>(function(){const b=document.querySelector('header.nav .menu'),n=document.querySelector('header.nav nav');if(b&&n){b.addEventListener('click',()=>n.classList.toggle('open'));n.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>n.classList.remove('open')))}})();</script></body></html>
+});</script><script>(function(){const b=document.querySelector('header.nav .menu'),n=document.querySelector('header.nav nav');if(b&&n){b.addEventListener('click',()=>n.classList.toggle('open'));n.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>n.classList.remove('open')))}})();</script><script>
+/* Keep existing application fields and submission logic untouched until a
+   compatible Google Forms submission bridge has been authorized. */
+(async function(){
+ const status=document.querySelector('.top .status');
+ try{
+  const response=await fetch('/api/membership-schema',{cache:'no-store'});
+  if(!response.ok)throw Error('unavailable');
+  const schema=await response.json();
+  if(!Array.isArray(schema.questions)||!schema.questions.length)throw Error('empty');
+  const fields=[...document.querySelectorAll('#application>.field')];
+  const source=schema.questions;
+  const normalized=s=>String(s||'').replace(/^\\d+\\.\\s*/,'').trim().toLowerCase();
+  const supported=['TEXT','PARAGRAPH_TEXT','MULTIPLE_CHOICE','CHECKBOX','LIST','DATE','FILE_UPLOAD'];
+  const compatible=source.length===17&&source.every((q,i)=>{
+    const label=fields[i]?.querySelector('.question');
+    if(!label)return false;
+    const old=normalized(label.textContent.replace('*',''));
+    return normalized(q.title)===old&&supported.includes(q.type);
+  });
+  if(compatible){
+   source.forEach((q,i)=>{
+    const field=fields[i],label=field.querySelector('.question');
+    if(!label)return;
+    label.textContent=(i+1)+'. '+q.title+(q.required?' *':'');
+    const control=field.querySelector('input:not([type=radio]),textarea');
+    if(control)control.required=!!q.required;
+   });
+   if(status)status.textContent='Questions checked against the official Google Form. Applications use the existing submission service.';
+  }else{
+   if(status)status.textContent='The official Google Form has changes not yet supported by this website submission system. Please apply using the official Google Form linked below.';
+   const btn=document.querySelector('#application button[type=submit]');
+   if(btn){btn.disabled=true;btn.title='Submission paused to prevent incorrect or incomplete applications';}
+   const msg=document.getElementById('message');
+   if(msg)msg.innerHTML='For the latest questions and secure submission, please use the <a href="https://docs.google.com/forms/d/e/1FAIpQLSe1ND8ITU-3AZgwZ5iczHf7WPSEKIu5A9a6bFhhl-B7Be6A2w/viewform" target="_blank" rel="noopener">official Google Form</a>.';
+  }
+ }catch(e){
+  if(status)status.textContent='Google Form question sync is temporarily unavailable. The existing website form is unchanged.';
+ }
+})();
+</script></body></html>
