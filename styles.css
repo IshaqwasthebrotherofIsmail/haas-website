@@ -47,3 +47,9 @@ header.nav,header.nav a,header.nav span,header.nav button{color:#000 !important;
 .hero>.shade{z-index:2}
 .hero>.hero-copy{position:absolute;z-index:3}
 .hero>img[data-image="hero"]{position:absolute;inset:0;animation:none!important;transform:none!important}
+
+/* Fully clickable membership category cards */
+.member-grid>a.member-card-link{display:block;background:#53265b;padding:28px;color:#fff;text-decoration:none;min-width:0;transition:background .2s ease,transform .2s ease;outline-offset:3px}
+.member-grid>a.member-card-link:hover,.member-grid>a.member-card-link:focus-visible{background:#66316e;transform:translateY(-3px)}
+.member-grid>a.member-card-link b{color:#fff}
+.member-grid .member-card-cta{display:block;margin-top:22px;font-weight:700;font-size:14px;color:#fff;text-decoration:underline;text-underline-offset:4px}
