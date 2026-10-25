@@ -31,7 +31,8 @@ function applyBranching(){
  questions.forEach((q,i)=>{
   const node=fields.children[i];if(!node)return;
   if(q.type==='PAGE_BREAK'){
-   current={id:q.id,nodes:[node],questions:[],endNav:q.navigation||'CONTINUE',endGoto:q.goto||null};
+   current.endNav=q.navigation||'CONTINUE';current.endGoto=q.goto||null;
+   current={id:q.id,nodes:[node],questions:[],endNav:'CONTINUE',endGoto:null};
    sections.push(current);
   }else{current.nodes.push(node);current.questions.push(q)}
  });
@@ -46,6 +47,8 @@ function applyBranching(){
    const branch=(q.branches||[]).find(b=>b.value===value);
    if(branch&&branch.navigation&&branch.navigation!=='CONTINUE'){nav=branch.navigation;dest=branch.goto;break}
   }
+  const routing=section.questions.filter(q=>(q.branches||[]).some(b=>b.navigation&&b.navigation!=='CONTINUE'));
+  if(routing.some(q=>!new FormData(form).get('q_'+q.id)))break;
   if(nav==='SUBMIT')break;
   if(nav==='GO_TO_PAGE'&&dest){const next=sections.findIndex(s=>s.id===dest);if(next<0||next<=at)break;at=next}
   else at++;
