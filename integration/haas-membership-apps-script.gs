@@ -62,7 +62,7 @@ function websiteColumns_(sheet,schema){
  const headerRange=sheet.getRange(1,1,1,last);
  const headers=headerRange.getValues()[0];
  const notes=headerRange.getNotes()[0];
- const questions=schema.filter(q=>q.type!=='FILE_UPLOAD');
+ const questions=schema.filter(q=>q.type!=='FILE_UPLOAD'&&q.type!=='PAGE_BREAK');
  const columns={};
  for(let i=4;i<last;i++){
   // New mapping is stored in the header cell NOTE, not its visible title.
@@ -117,7 +117,7 @@ function activeQuestionIds_(schema,answers){
  const sections=[{id:'start',questions:[],navigation:'CONTINUE',goto:null}];
  let current=sections[0];
  for(const q of schema){
-  if(q.type==='PAGE_BREAK'){current={id:q.id,questions:[],navigation:q.navigation||'CONTINUE',goto:q.goto||null};sections.push(current)}
+  if(q.type==='PAGE_BREAK'){current.navigation=q.navigation||'CONTINUE';current.goto=q.goto||null;current={id:q.id,questions:[],navigation:'CONTINUE',goto:null};sections.push(current)}
   else current.questions.push(q);
  }
  const active=new Set();let index=0,steps=0;
@@ -131,6 +131,8 @@ function activeQuestionIds_(schema,answers){
     navigation=branch.navigation;destination=branch.goto;break;
    }
   }
+  const routing=section.questions.filter(q=>(q.branches||[]).some(b=>b.navigation&&b.navigation!=='CONTINUE'));
+  if(routing.some(q=>!answers[q.id]))break;
   if(navigation==='SUBMIT')break;
   if(navigation==='GO_TO_PAGE'&&destination){
    const next=sections.findIndex(x=>x.id===destination);
