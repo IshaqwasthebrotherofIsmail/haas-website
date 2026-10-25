@@ -52,11 +52,11 @@ function doPost(e){
   if(!p.getProperty('HAAS_SUBMISSION_SECRET')||data.secret!==p.getProperty('HAAS_SUBMISSION_SECRET'))return output({ok:false,error:'Unauthorized'});
   const answers=data.application?.answers;
   if(!answers||typeof answers!=='object'||Array.isArray(answers))return output({ok:false,error:'Invalid answers'});
-  const schema=formSchema_();const known=new Set(schema.map(q=>q.id));
+  const schema=formSchema_();const known=new Set(schema.filter(q=>q.type!=='FILE_UPLOAD').map(q=>q.id));
   if(Object.keys(answers).some(k=>!known.has(k)))return output({ok:false,error:'Form changed. Refresh and retry.'});
   for(const q of schema){
    const a=answers[q.id],values=Array.isArray(a)?a:[a];
-   if(q.required&&(!values.length||values.every(v=>!String(v||'').trim())))return output({ok:false,error:'Missing required answer: '+q.title});
+   if(q.required&&q.type!=='FILE_UPLOAD'&&(!values.length||values.every(v=>!String(v||'').trim())))return output({ok:false,error:'Missing required answer: '+q.title});
    if(q.options.length&&values.some(v=>v!=null&&v!==''&&!q.options.includes(String(v))))return output({ok:false,error:'Invalid option: '+q.title});
   }
   const photo=data.application?.photo;
