@@ -9,7 +9,7 @@ function fail(text){fields.replaceChildren();submit.disabled=true;status.textCon
 function element(tag,props={},value=''){const node=document.createElement(tag);for(const [key,val] of Object.entries(props)){if(key==='className')node.className=val;else if(key==='required')node.required=val;else node.setAttribute(key,val)}if(value)node.textContent=value;return node}
 function render(q,index){
  if(q.type==='PAGE_BREAK')return element('div',{className:'haas-section-heading'},q.title);
- const wrap=element('div',{className:'field'}),label=element('label',{className:'question'},(index+1)+'. '+q.title+(q.required?' *':'')),name='q_'+q.id;
+ const wrap=element('div',{className:'field'}),label=element('label',{className:'question'},q.title+(q.required?' *':'')),name='q_'+q.id;
  wrap.append(label);
  if(q.type==='TEXT'||q.type==='PARAGRAPH_TEXT'||q.type==='DATE'){
   const node=q.type==='PARAGRAPH_TEXT'?element('textarea',{name,rows:'3'}):element('input',{name,type:q.type==='DATE'?'date':'text'});
@@ -106,6 +106,7 @@ async function init(){
    }
   }
   fields.replaceChildren(...questions.map(render));
+  form.classList.remove('is-loading');
   submit.disabled=!schema.submissionsEnabled;status.textContent=schema.submissionsEnabled?'Questions synchronized with the official HAAS Google Form.':'Questions synchronized. Website submission is awaiting final verification; please use the official Google Form for now.';
   updateProgress();
  }catch(e){fail('The latest application questions cannot be displayed here at present.')}
