@@ -1,6 +1,6 @@
 (()=>{'use strict';
 const FORM_URL='https://docs.google.com/forms/d/e/1FAIpQLSe1ND8ITU-3AZgwZ5iczHf7WPSEKIu5A9a6bFhhl-B7Be6A2w/viewform';
-const TYPES=new Set(['TEXT','PARAGRAPH_TEXT','MULTIPLE_CHOICE','CHECKBOX','LIST','DATE','FILE_UPLOAD']);
+const TYPES=new Set(['TEXT','PARAGRAPH_TEXT','MULTIPLE_CHOICE','CHECKBOX','LIST','DATE','FILE_UPLOAD','PAGE_BREAK']);
 const form=document.getElementById('application'),fields=document.getElementById('dynamic-fields'),message=document.getElementById('message'),status=document.querySelector('.top .status'),submit=form.querySelector('[type=submit]'),progress=document.getElementById('progress');
 let questions=[];
 const link=()=>{const a=document.createElement('a');a.href=FORM_URL;a.target='_blank';a.rel='noopener';a.textContent='official Google Form';return a};
@@ -8,6 +8,7 @@ function notice(text){message.replaceChildren(document.createTextNode(text+' '),
 function fail(text){fields.replaceChildren();submit.disabled=true;status.textContent=text;notice('Please apply using the');}
 function element(tag,props={},value=''){const node=document.createElement(tag);for(const [key,val] of Object.entries(props)){if(key==='className')node.className=val;else if(key==='required')node.required=val;else node.setAttribute(key,val)}if(value)node.textContent=value;return node}
 function render(q,index){
+ if(q.type==='PAGE_BREAK')return element('div',{className:'haas-section-heading'},q.title);
  const wrap=element('div',{className:'field'}),label=element('label',{className:'question'},(index+1)+'. '+q.title+(q.required?' *':'')),name='q_'+q.id;
  wrap.append(label);
  if(q.type==='TEXT'||q.type==='PARAGRAPH_TEXT'||q.type==='DATE'){
@@ -25,7 +26,40 @@ function render(q,index){
  }
  return wrap;
 }
-function updateProgress(){const items=questions.filter(q=>q.type!=='FILE_UPLOAD');let filled=0;const data=new FormData(form);for(const q of items){const val=data.getAll('q_'+q.id);if(val.some(v=>String(v).trim()))filled++}progress.style.width=(items.length?Math.round(filled/items.length*100):0)+'%'}
+function applyBranching(){
+ const sections=[];let current={id:'start',nodes:[],questions:[],endNav:'CONTINUE',endGoto:null};sections.push(current);
+ questions.forEach((q,i)=>{
+  const node=fields.children[i];if(!node)return;
+  if(q.type==='PAGE_BREAK'){
+   current={id:q.id,nodes:[node],questions:[],endNav:q.navigation||'CONTINUE',endGoto:q.goto||null};
+   sections.push(current);
+  }else{current.nodes.push(node);current.questions.push(q)}
+ });
+ // Branches are evaluated at the end of each section, as in Google Forms.
+ const visible=new Set();let at=0;let safety=0;
+ while(at<sections.length&&safety++<sections.length+1){
+  const section=sections[at];if(visible.has(at))break;visible.add(at);
+  let nav=section.endNav,dest=section.endGoto;
+  for(const q of section.questions){
+   if(q.type!=='MULTIPLE_CHOICE'&&q.type!=='LIST')continue;
+   const value=new FormData(form).get('q_'+q.id);
+   const branch=(q.branches||[]).find(b=>b.value===value);
+   if(branch&&branch.navigation&&branch.navigation!=='CONTINUE'){nav=branch.navigation;dest=branch.goto;break}
+  }
+  if(nav==='SUBMIT')break;
+  if(nav==='GO_TO_PAGE'&&dest){const next=sections.findIndex(s=>s.id===dest);if(next<0||next<=at)break;at=next}
+  else at++;
+ }
+ sections.forEach((section,i)=>section.nodes.forEach(node=>{
+  const show=visible.has(i);node.hidden=!show;node.style.display=show?'':'none';
+  node.querySelectorAll('input,select,textarea').forEach(input=>{
+   if(!input.dataset.haasRequired)input.dataset.haasRequired=input.required?'yes':'no';
+   input.required=show&&input.dataset.haasRequired==='yes';
+   input.disabled=!show;
+  });
+ }));
+}
+function updateProgress(){applyBranching();const items=questions.filter(q=>q.type!=='FILE_UPLOAD'&&fields.querySelector('[name="q_'+q.id+'"]:not(:disabled)'));let filled=0;const data=new FormData(form);for(const q of items){const val=data.getAll('q_'+q.id);if(val.some(v=>String(v).trim()))filled++}progress.style.width=(items.length?Math.round(filled/items.length*100):0)+'%'}
 async function init(){
  submit.disabled=true;
  try{
@@ -82,7 +116,9 @@ form.addEventListener('submit',async event=>{
  const data=new FormData(form),answers={};let photo=null;
  for(const q of questions){
   const key='q_'+q.id;
+  if(q.type==='PAGE_BREAK')continue;
   if(q.type==='FILE_UPLOAD'){photo=data.get(key);continue}
+  if(!fields.querySelector('[name="'+key+'"]:not(:disabled)'))continue;
   const vals=data.getAll(key).map(String);
   if(q.required&&!vals.some(v=>v.trim())){notice('Please complete '+q.title+'. You can also use the');return}
   answers[q.id]=q.type==='CHECKBOX'?vals:(vals[0]||'');
