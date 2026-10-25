@@ -11,6 +11,6 @@ export default async function handler(req,res){
   if(!data||!Array.isArray(data.questions)||data.questions.length>150)throw Error('Invalid schema');
   const questions=data.questions.map(q=>({id:String(q.id||''),title:String(q.title||'').slice(0,500),type:String(q.type||''),required:!!q.required,options:Array.isArray(q.options)?q.options.slice(0,100).map(v=>String(v).slice(0,300)):[]}));
   res.setHeader('Cache-Control','public, s-maxage=60, stale-while-revalidate=120');
-  return res.status(200).json({title:String(data.title||''),questions});
+  return res.status(200).json({title:String(data.title||''),questions,submissionsEnabled:process.env.HAAS_MEMBERSHIP_ENABLED==='true'});
  }catch(e){return res.status(502).json({error:'Form synchronization temporarily unavailable'});}
 }
