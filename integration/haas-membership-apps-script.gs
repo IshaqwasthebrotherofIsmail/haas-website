@@ -44,6 +44,46 @@ function formSchema_(){
 function doGet(){
  return ContentService.createTextOutput(JSON.stringify({title:FormApp.openById(FORM_ID).getTitle(),questions:formSchema_()})).setMimeType(ContentService.MimeType.JSON);
 }
+// Keep one stable column per Form item ID, using human-readable question titles.
+// Existing answers remain mapped correctly if a question is renamed or reordered.
+function websiteColumns_(sheet,schema){
+ const base=['Received at','Application ID','Answers JSON','Photo URL'];
+ const last=Math.max(sheet.getLastColumn(),4);
+ const headers=sheet.getRange(1,1,1,last).getValues()[0];
+ const ids=schema.filter(q=>q.type!=='FILE_UPLOAD').map(q=>q.id);
+ const names=new Map(schema.map(q=>[q.id,q.title]));
+ const columns={};
+ for(let i=4;i<headers.length;i++){
+  const match=String(headers[i]||'').match(/\\[ID: (\\d+)\\]$/);
+  if(match)columns[match[1]]=i+1;
+ }
+ let next=Math.max(headers.length,4)+1;
+ for(const id of ids){
+  if(!columns[id]){columns[id]=next++;}
+  sheet.getRange(1,columns[id]).setValue(names.get(id)+' [ID: '+id+']');
+ }
+ return columns;
+}
+// Run once after deployment to expand legacy JSON rows without losing source data.
+function migrateWebsiteApplications(){
+ const sheet=SpreadsheetApp.openById(EXISTING_SHEET_ID).getSheetByName(WEBSITE_TAB);
+ if(!sheet)throw Error('Website Applications tab not initialized');
+ const schema=formSchema_();
+ const lock=LockService.getScriptLock();lock.waitLock(30000);
+ try{
+  const columns=websiteColumns_(sheet,schema);
+  const count=sheet.getLastRow();
+  for(let row=2;row<=count;row++){
+   const raw=sheet.getRange(row,3).getValue();if(!raw)continue;
+   let answers;try{answers=JSON.parse(raw)}catch(e){continue}
+   for(const [id,col] of Object.entries(columns)){
+    const value=answers[id];
+    if(value===undefined||value===null)continue;
+    sheet.getRange(row,col).setValue(Array.isArray(value)?value.join(', '):String(value));
+   }
+  }
+ }finally{lock.releaseLock()}
+}
 function doPost(e){
  const output=obj=>ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
  try{
@@ -68,7 +108,17 @@ function doPost(e){
   const file=folder.createFile(Utilities.newBlob(bytes,photo.type,id+'.'+ext));
   const sheet=SpreadsheetApp.openById(EXISTING_SHEET_ID).getSheetByName(WEBSITE_TAB);
   if(!sheet)throw Error('Website Applications tab not initialized');
-  sheet.appendRow([new Date(),id,JSON.stringify(answers),file.getUrl()]);
+  const lock=LockService.getScriptLock();lock.waitLock(30000);
+  try{
+   const columns=websiteColumns_(sheet,schema);
+   const row=new Array(Math.max(4,...Object.values(columns))).fill('');
+   row[0]=new Date();row[1]=id;row[2]=JSON.stringify(answers);row[3]=file.getUrl();
+   for(const [questionId,column] of Object.entries(columns)){
+    const value=answers[questionId];
+    if(value!==undefined&&value!==null)row[column-1]=Array.isArray(value)?value.join(', '):String(value);
+   }
+   sheet.appendRow(row);
+  }finally{lock.releaseLock()}
   return output({ok:true,applicationId:id});
  }catch(err){console.error(err);return output({ok:false,error:'Submission could not be confirmed'});}
 }
