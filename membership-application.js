@@ -35,7 +35,7 @@ async function init(){
   const uploads=schema.questions.filter(q=>q.type==='FILE_UPLOAD');if(uploads.length!==1)throw Error('Unsupported photo question');
   questions=schema.questions;
   fields.replaceChildren(...questions.map(render));
-  submit.disabled=false;status.textContent='Questions synchronized with the official HAAS Google Form. Website submissions are available once verification is complete.';
+  submit.disabled=!schema.submissionsEnabled;status.textContent=schema.submissionsEnabled?'Questions synchronized with the official HAAS Google Form.':'Questions synchronized. Website submission is awaiting final verification; please use the official Google Form for now.';
   updateProgress();
  }catch(e){fail('The latest application questions cannot be displayed here at present.')}
 }
