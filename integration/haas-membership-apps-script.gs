@@ -113,6 +113,33 @@ function migrateWebsiteApplications(){
   }
  }finally{lock.releaseLock()}
 }
+function activeQuestionIds_(schema,answers){
+ const sections=[{id:'start',questions:[],navigation:'CONTINUE',goto:null}];
+ let current=sections[0];
+ for(const q of schema){
+  if(q.type==='PAGE_BREAK'){current={id:q.id,questions:[],navigation:q.navigation||'CONTINUE',goto:q.goto||null};sections.push(current)}
+  else current.questions.push(q);
+ }
+ const active=new Set();let index=0,steps=0;
+ while(index<sections.length&&steps++<=sections.length){
+  const section=sections[index];section.questions.forEach(q=>active.add(q.id));
+  let navigation=section.navigation,destination=section.goto;
+  for(const q of section.questions){
+   if(q.type!=='MULTIPLE_CHOICE'&&q.type!=='LIST')continue;
+   const branch=(q.branches||[]).find(b=>b.value===answers[q.id]);
+   if(branch&&branch.navigation&&branch.navigation!=='CONTINUE'){
+    navigation=branch.navigation;destination=branch.goto;break;
+   }
+  }
+  if(navigation==='SUBMIT')break;
+  if(navigation==='GO_TO_PAGE'&&destination){
+   const next=sections.findIndex(x=>x.id===destination);
+   if(next<=index)break;
+   index=next;
+  }else index++;
+ }
+ return active;
+}
 function doPost(e){
  const output=obj=>ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
  try{
@@ -121,12 +148,13 @@ function doPost(e){
   if(!p.getProperty('HAAS_SUBMISSION_SECRET')||data.secret!==p.getProperty('HAAS_SUBMISSION_SECRET'))return output({ok:false,error:'Unauthorized'});
   const answers=data.application?.answers;
   if(!answers||typeof answers!=='object'||Array.isArray(answers))return output({ok:false,error:'Invalid answers'});
-  const schema=formSchema_();const known=new Set(schema.filter(q=>q.type!=='FILE_UPLOAD').map(q=>q.id));
+  const schema=formSchema_();const known=new Set(schema.filter(q=>q.type!=='FILE_UPLOAD'&&q.type!=='PAGE_BREAK').map(q=>q.id));
+  const active=activeQuestionIds_(schema,answers);
   if(Object.keys(answers).some(k=>!known.has(k)))return output({ok:false,error:'Form changed. Refresh and retry.'});
   for(const q of schema){
    const a=answers[q.id],values=Array.isArray(a)?a:[a];
-   if(q.required&&q.type!=='FILE_UPLOAD'&&(!values.length||values.every(v=>!String(v||'').trim())))return output({ok:false,error:'Missing required answer: '+q.title});
-   if(q.options.length&&values.some(v=>v!=null&&v!==''&&!q.options.includes(String(v))))return output({ok:false,error:'Invalid option: '+q.title});
+   if(q.required&&active.has(q.id)&&q.type!=='FILE_UPLOAD'&&(!values.length||values.every(v=>!String(v||'').trim())))return output({ok:false,error:'Missing required answer: '+q.title});
+   if(active.has(q.id)&&q.options.length&&values.some(v=>v!=null&&v!==''&&!q.options.includes(String(v))))return output({ok:false,error:'Invalid option: '+q.title});
   }
   const photo=data.application?.photo;
   if(!photo||!/^image\/(jpeg|png|webp)$/.test(photo.type)||typeof photo.data!=='string'||photo.data.length>4200000)return output({ok:false,error:'Valid photo under 3 MB required'});
