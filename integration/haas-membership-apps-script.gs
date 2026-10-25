@@ -30,13 +30,24 @@ function setupHAAS(){
 }
 function formSchema_(){
  return FormApp.openById(FORM_ID).getItems().map(item=>{
-  const type=item.getType();const q={id:String(item.getId()),title:item.getTitle(),type:String(type),required:false,options:[]};
+  const type=item.getType();const q={id:String(item.getId()),title:item.getTitle(),type:String(type),required:false,options:[],branches:[]};
+  if(String(type)==='PAGE_BREAK'){
+   const page=item.asPageBreakItem();q.navigation=String(page.getPageNavigationType());
+   const dest=page.getGoToPage();q.goto=dest?String(dest.getId()):null;
+  }
   const methods={TEXT:'asTextItem',PARAGRAPH_TEXT:'asParagraphTextItem',MULTIPLE_CHOICE:'asMultipleChoiceItem',CHECKBOX:'asCheckboxItem',LIST:'asListItem',DATE:'asDateItem',FILE_UPLOAD:'asFileUploadItem'};
   const method=methods[String(type)];
   if(method&&typeof item[method]==='function'){
    const obj=item[method]();
    if(typeof obj.isRequired==='function')q.required=obj.isRequired();
-   if(typeof obj.getChoices==='function')q.options=obj.getChoices().map(c=>c.getValue());
+   if(typeof obj.getChoices==='function'){
+    const choices=obj.getChoices();q.options=choices.map(c=>c.getValue());
+    if(String(type)==='MULTIPLE_CHOICE'||String(type)==='LIST')q.branches=choices.map(c=>{
+     const navigation=typeof c.getPageNavigationType==='function'?String(c.getPageNavigationType()):'CONTINUE';
+     const dest=typeof c.getGotoPage==='function'?c.getGotoPage():null;
+     return {value:c.getValue(),navigation,goto:dest?String(dest.getId()):null};
+    });
+   }
   }
   return q;
  });
