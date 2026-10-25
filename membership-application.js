@@ -52,22 +52,23 @@ async function init(){
     gif.src=completion;
     gif.alt='Horse archer completion animation';
     document.getElementById('haas-loading-label').textContent='Application ready';
-    // GIF 2 is 10 frames at 100 ms each. Capture its last frame just
-    // before the first loop ends, then hold that exact visual before reveal.
-    await new Promise(resolve=>setTimeout(resolve,950));
-    try{
-     const frozen=document.createElement('canvas');
-     frozen.width=gif.naturalWidth||568;
-     frozen.height=gif.naturalHeight||320;
-     frozen.className=gif.className;
-     frozen.setAttribute('role','img');
-     frozen.setAttribute('aria-label','Horse archer final pose');
-     frozen.getContext('2d').drawImage(gif,0,0,frozen.width,frozen.height);
-     gif.replaceWith(frozen);
-    }catch(error){
-     // Never block form rendering if a browser cannot capture a GIF frame.
+    // Play the 10-frame, 100 ms/frame completion animation once.
+    // Replace it with the EXACT final frame extracted from the source GIF.
+    // Never sample a looping GIF with canvas: browsers can reset to frame 1.
+    const still=new Image();
+    still.src='assets/membership-complete-final.png';
+    const stillReady=await new Promise(resolve=>{
+     if(still.complete)return resolve(still.naturalWidth>0);
+     still.onload=()=>resolve(true);
+     still.onerror=()=>resolve(false);
+    });
+    await new Promise(resolve=>setTimeout(resolve,1000));
+    if(stillReady){
+     still.className=gif.className;
+     still.alt='Horse archer final pose';
+     gif.replaceWith(still);
     }
-    await new Promise(resolve=>setTimeout(resolve,650));
+    await new Promise(resolve=>setTimeout(resolve,600));
    }
   }
   fields.replaceChildren(...questions.map(render));
