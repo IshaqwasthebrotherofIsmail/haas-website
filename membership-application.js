@@ -52,7 +52,22 @@ async function init(){
     gif.src=completion;
     gif.alt='Horse archer completion animation';
     document.getElementById('haas-loading-label').textContent='Application ready';
-    await new Promise(resolve=>setTimeout(resolve,1400));
+    // GIF 2 is 10 frames at 100 ms each. Capture its last frame just
+    // before the first loop ends, then hold that exact visual before reveal.
+    await new Promise(resolve=>setTimeout(resolve,950));
+    try{
+     const frozen=document.createElement('canvas');
+     frozen.width=gif.naturalWidth||568;
+     frozen.height=gif.naturalHeight||320;
+     frozen.className=gif.className;
+     frozen.setAttribute('role','img');
+     frozen.setAttribute('aria-label','Horse archer final pose');
+     frozen.getContext('2d').drawImage(gif,0,0,frozen.width,frozen.height);
+     gif.replaceWith(frozen);
+    }catch(error){
+     // Never block form rendering if a browser cannot capture a GIF frame.
+    }
+    await new Promise(resolve=>setTimeout(resolve,650));
    }
   }
   fields.replaceChildren(...questions.map(render));
