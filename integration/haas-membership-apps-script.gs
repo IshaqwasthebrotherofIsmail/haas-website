@@ -1,18 +1,22 @@
 /*
  HAAS membership bridge (deployment template, NOT active until configured).
- This records website applications in a private Google Sheet and uploads
+ This records website applications in a separate tab of the existing HAAS Member Particulars spreadsheet and uploads
  applicant photos to a private Drive folder. It does NOT create native
  Google Forms responses, because Apps Script cannot programmatically
  populate a Google Forms file-upload answer.
 */
 const FORM_ID='10Skxo8Tc5EqfZsQRbfgHfNwAhOlcm9EYmPCuPclIPTE';
+const EXISTING_SHEET_ID='1jbL7OWxnYkr_JUO3LBLAZnjibT0913J-kaAqT6JP1hA';
+const WEBSITE_TAB='Website Applications';
 function setupHAAS(){
  const p=PropertiesService.getScriptProperties();
- if(!p.getProperty('HAAS_SHEET_ID')){
-  const sheet=SpreadsheetApp.create('HAAS Website Membership Applications');
-  p.setProperty('HAAS_SHEET_ID',sheet.getId());
-  sheet.getSheets()[0].appendRow(['Received at','Application ID','Answers JSON','Photo URL']);
+ const spreadsheet=SpreadsheetApp.openById(EXISTING_SHEET_ID);
+ let tab=spreadsheet.getSheetByName(WEBSITE_TAB);
+ if(!tab){
+  tab=spreadsheet.insertSheet(WEBSITE_TAB);
+  tab.appendRow(['Received at','Application ID','Answers JSON','Photo URL']);
  }
+ p.setProperty('HAAS_SHEET_ID',EXISTING_SHEET_ID);
  if(!p.getProperty('HAAS_PHOTO_FOLDER_ID')){
   const folder=DriveApp.createFolder('HAAS Website Membership Photos');
   p.setProperty('HAAS_PHOTO_FOLDER_ID',folder.getId());
@@ -62,7 +66,8 @@ function doPost(e){
   const id=Utilities.getUuid(),ext=photo.type==='image/png'?'png':photo.type==='image/webp'?'webp':'jpg';
   const folder=DriveApp.getFolderById(p.getProperty('HAAS_PHOTO_FOLDER_ID'));
   const file=folder.createFile(Utilities.newBlob(bytes,photo.type,id+'.'+ext));
-  const sheet=SpreadsheetApp.openById(p.getProperty('HAAS_SHEET_ID')).getSheets()[0];
+  const sheet=SpreadsheetApp.openById(EXISTING_SHEET_ID).getSheetByName(WEBSITE_TAB);
+  if(!sheet)throw Error('Website Applications tab not initialized');
   sheet.appendRow([new Date(),id,JSON.stringify(answers),file.getUrl()]);
   return output({ok:true,applicationId:id});
  }catch(err){console.error(err);return output({ok:false,error:'Submission could not be confirmed'});}
