@@ -47,22 +47,40 @@ function doGet(){
 // Keep one stable column per Form item ID, using human-readable question titles.
 // Existing answers remain mapped correctly if a question is renamed or reordered.
 function websiteColumns_(sheet,schema){
- const base=['Received at','Application ID','Answers JSON','Photo URL'];
  const last=Math.max(sheet.getLastColumn(),4);
- const headers=sheet.getRange(1,1,1,last).getValues()[0];
- const ids=schema.filter(q=>q.type!=='FILE_UPLOAD').map(q=>q.id);
- const names=new Map(schema.map(q=>[q.id,q.title]));
+ const headerRange=sheet.getRange(1,1,1,last);
+ const headers=headerRange.getValues()[0];
+ const notes=headerRange.getNotes()[0];
+ const questions=schema.filter(q=>q.type!=='FILE_UPLOAD');
  const columns={};
- for(let i=4;i<headers.length;i++){
-  const match=String(headers[i]||'').match(/\\[ID: (\\d+)\\]$/);
-  if(match)columns[match[1]]=i+1;
+ for(let i=4;i<last;i++){
+  // New mapping is stored in the header cell NOTE, not its visible title.
+  const note=String(notes[i]||'').match(/^HAAS_FORM_ITEM_ID:(\\d+)$/);
+  // One-time compatibility with the former "[ID: 123]" headers.
+  const legacy=String(headers[i]||'').match(/\\[ID: (\\d+)\\]$/);
+  const id=note?.[1]||legacy?.[1];
+  if(id&&!columns[id])columns[id]=i+1;
  }
- let next=Math.max(headers.length,4)+1;
- for(const id of ids){
-  if(!columns[id]){columns[id]=next++;}
-  sheet.getRange(1,columns[id]).setValue(names.get(id)+' [ID: '+id+']');
+ let next=last+1;
+ for(const q of questions){
+  const col=columns[q.id]||(columns[q.id]=next++);
+  const cell=sheet.getRange(1,col);
+  const existing=String(headers[col-1]||'');
+  const cleaned=existing.replace(/\\s*\\[ID: \\d+\\]$/,'').trim();
+  // Preserve all custom labels; only initialize new/legacy headers.
+  if(!cleaned)cell.setValue(q.title);
+  else if(cleaned!==existing)cell.setValue(cleaned);
+  cell.setNote('HAAS_FORM_ITEM_ID:'+q.id);
  }
  return columns;
+}
+// Run once to remove visible IDs and migrate their mapping into header notes.
+function cleanWebsiteColumnHeaders(){
+ const sheet=SpreadsheetApp.openById(EXISTING_SHEET_ID).getSheetByName(WEBSITE_TAB);
+ if(!sheet)throw Error('Website Applications tab not initialized');
+ const lock=LockService.getScriptLock();lock.waitLock(30000);
+ try{websiteColumns_(sheet,formSchema_());}
+ finally{lock.releaseLock();}
 }
 // Run once after deployment to expand legacy JSON rows without losing source data.
 function migrateWebsiteApplications(){
