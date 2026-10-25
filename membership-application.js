@@ -34,6 +34,27 @@ async function init(){
   if(schema.questions.some(q=>!TYPES.has(q.type)||!q.id||!q.title||(['MULTIPLE_CHOICE','CHECKBOX','LIST'].includes(q.type)&&(!Array.isArray(q.options)||!q.options.length))))throw Error('Unsupported questions');
   const uploads=schema.questions.filter(q=>q.type==='FILE_UPLOAD');if(uploads.length!==1)throw Error('Unsupported photo question');
   questions=schema.questions;
+  // Show the supplied completion GIF once, then reveal the questions.
+  // If the image is unavailable, reveal the form immediately instead of blocking applications.
+  const loader=fields.querySelector('.haas-loading');
+  const gif=document.getElementById('haas-loader-gif');
+  if(loader&&gif){
+   const completion='assets/membership-complete.gif';
+   const available=await new Promise(resolve=>{
+    const preview=new Image();
+    const timer=setTimeout(()=>resolve(false),3000);
+    preview.onload=()=>{clearTimeout(timer);resolve(true)};
+    preview.onerror=()=>{clearTimeout(timer);resolve(false)};
+    preview.src=completion;
+   });
+   if(available){
+    loader.classList.add('is-complete');
+    gif.src=completion;
+    gif.alt='Horse archer completion animation';
+    document.getElementById('haas-loading-label').textContent='Application ready';
+    await new Promise(resolve=>setTimeout(resolve,1400));
+   }
+  }
   fields.replaceChildren(...questions.map(render));
   submit.disabled=!schema.submissionsEnabled;status.textContent=schema.submissionsEnabled?'Questions synchronized with the official HAAS Google Form.':'Questions synchronized. Website submission is awaiting final verification; please use the official Google Form for now.';
   updateProgress();
