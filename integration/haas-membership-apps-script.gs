@@ -40,6 +40,16 @@ function formSchema_(){
   if(method&&typeof item[method]==='function'){
    const obj=item[method]();
    if(typeof obj.isRequired==='function')q.required=obj.isRequired();
+   // Mirror Google Forms text validation rules in the public schema.
+   if((String(type)==='TEXT'||String(type)==='PARAGRAPH_TEXT')&&typeof obj.getValidation==='function'){
+    const validation=obj.getValidation();
+    if(validation){
+     const criterion=String(validation.getCriteriaType());
+     const values=validation.getCriteriaValues();
+     const supported=['TEXT_CONTAINS_PATTERN','TEXT_NOT_CONTAINS_PATTERN','TEXT_MATCHES_PATTERN','TEXT_NOT_MATCHES_PATTERN','TEXT_CONTAINS_TEXT','TEXT_NOT_CONTAINS_TEXT','TEXT_IS_EMAIL','TEXT_IS_URL','TEXT_LENGTH_GREATER_THAN','TEXT_LENGTH_LESS_THAN'];
+     if(supported.includes(criterion))q.validation={criterion,value:values.length?String(values[0]):'',helpText:validation.getHelpText()||''};
+    }
+   }
    if(typeof obj.getChoices==='function'){
     const choices=obj.getChoices();q.options=choices.map(c=>c.getValue());
     if(String(type)==='MULTIPLE_CHOICE'||String(type)==='LIST')q.branches=choices.map(c=>{
@@ -141,6 +151,104 @@ function activeQuestionIds_(schema,answers){
   }else index++;
  }
  return active;
+}
+function validateAnswer_(q,answer){
+ const rule=q.validation;if(!rule||answer==null||String(answer).trim()==='')return true;
+ const value=String(answer),test=String(rule.value||'');
+ try{
+  switch(rule.criterion){
+   case 'TEXT_MATCHES_PATTERN':return new RegExp('^(?:'+test+')
+ const output=obj=>ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+ try{
+  const p=PropertiesService.getScriptProperties();
+  const data=JSON.parse(e.postData.contents);
+  if(!p.getProperty('HAAS_SUBMISSION_SECRET')||data.secret!==p.getProperty('HAAS_SUBMISSION_SECRET'))return output({ok:false,error:'Unauthorized'});
+  const answers=data.application?.answers;
+  if(!answers||typeof answers!=='object'||Array.isArray(answers))return output({ok:false,error:'Invalid answers'});
+  const schema=formSchema_();const known=new Set(schema.filter(q=>q.type!=='FILE_UPLOAD'&&q.type!=='PAGE_BREAK').map(q=>q.id));
+  const active=activeQuestionIds_(schema,answers);
+  if(Object.keys(answers).some(k=>!known.has(k)))return output({ok:false,error:'Form changed. Refresh and retry.'});
+  for(const q of schema){
+   const a=answers[q.id],values=Array.isArray(a)?a:[a];
+   if(q.required&&active.has(q.id)&&q.type!=='FILE_UPLOAD'&&(!values.length||values.every(v=>!String(v||'').trim())))return output({ok:false,error:'Missing required answer: '+q.title});
+   if(active.has(q.id)&&!validateAnswer_(q,a))return output({ok:false,error:q.validation.helpText||'Invalid answer: '+q.title});
+   if(active.has(q.id)&&q.options.length&&values.some(v=>v!=null&&v!==''&&!q.options.includes(String(v))))return output({ok:false,error:'Invalid option: '+q.title});
+  }
+  const photo=data.application?.photo;
+  if(!photo||!/^image\/(jpeg|png|webp)$/.test(photo.type)||typeof photo.data!=='string'||photo.data.length>4200000)return output({ok:false,error:'Valid photo under 3 MB required'});
+  const bytes=Utilities.base64Decode(photo.data);
+  if(bytes.length>3*1024*1024)return output({ok:false,error:'Photo exceeds 3 MB'});
+  const id=Utilities.getUuid(),ext=photo.type==='image/png'?'png':photo.type==='image/webp'?'webp':'jpg';
+  const folder=DriveApp.getFolderById(p.getProperty('HAAS_PHOTO_FOLDER_ID'));
+  const file=folder.createFile(Utilities.newBlob(bytes,photo.type,id+'.'+ext));
+  const sheet=SpreadsheetApp.openById(EXISTING_SHEET_ID).getSheetByName(WEBSITE_TAB);
+  if(!sheet)throw Error('Website Applications tab not initialized');
+  const lock=LockService.getScriptLock();lock.waitLock(30000);
+  try{
+   const columns=websiteColumns_(sheet,schema);
+   const row=new Array(Math.max(4,...Object.values(columns))).fill('');
+   row[0]=new Date();row[1]=id;row[2]=JSON.stringify(answers);row[3]=file.getUrl();
+   for(const [questionId,column] of Object.entries(columns)){
+    const value=answers[questionId];
+    if(value!==undefined&&value!==null)row[column-1]=Array.isArray(value)?value.join(', '):String(value);
+   }
+   sheet.appendRow(row);
+  }finally{lock.releaseLock()}
+  return output({ok:true,applicationId:id});
+ }catch(err){console.error(err);return output({ok:false,error:'Submission could not be confirmed'});}
+}
+).test(value);
+   case 'TEXT_NOT_MATCHES_PATTERN':return !new RegExp('^(?:'+test+')
+ const output=obj=>ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+ try{
+  const p=PropertiesService.getScriptProperties();
+  const data=JSON.parse(e.postData.contents);
+  if(!p.getProperty('HAAS_SUBMISSION_SECRET')||data.secret!==p.getProperty('HAAS_SUBMISSION_SECRET'))return output({ok:false,error:'Unauthorized'});
+  const answers=data.application?.answers;
+  if(!answers||typeof answers!=='object'||Array.isArray(answers))return output({ok:false,error:'Invalid answers'});
+  const schema=formSchema_();const known=new Set(schema.filter(q=>q.type!=='FILE_UPLOAD'&&q.type!=='PAGE_BREAK').map(q=>q.id));
+  const active=activeQuestionIds_(schema,answers);
+  if(Object.keys(answers).some(k=>!known.has(k)))return output({ok:false,error:'Form changed. Refresh and retry.'});
+  for(const q of schema){
+   const a=answers[q.id],values=Array.isArray(a)?a:[a];
+   if(q.required&&active.has(q.id)&&q.type!=='FILE_UPLOAD'&&(!values.length||values.every(v=>!String(v||'').trim())))return output({ok:false,error:'Missing required answer: '+q.title});
+   if(active.has(q.id)&&q.options.length&&values.some(v=>v!=null&&v!==''&&!q.options.includes(String(v))))return output({ok:false,error:'Invalid option: '+q.title});
+  }
+  const photo=data.application?.photo;
+  if(!photo||!/^image\/(jpeg|png|webp)$/.test(photo.type)||typeof photo.data!=='string'||photo.data.length>4200000)return output({ok:false,error:'Valid photo under 3 MB required'});
+  const bytes=Utilities.base64Decode(photo.data);
+  if(bytes.length>3*1024*1024)return output({ok:false,error:'Photo exceeds 3 MB'});
+  const id=Utilities.getUuid(),ext=photo.type==='image/png'?'png':photo.type==='image/webp'?'webp':'jpg';
+  const folder=DriveApp.getFolderById(p.getProperty('HAAS_PHOTO_FOLDER_ID'));
+  const file=folder.createFile(Utilities.newBlob(bytes,photo.type,id+'.'+ext));
+  const sheet=SpreadsheetApp.openById(EXISTING_SHEET_ID).getSheetByName(WEBSITE_TAB);
+  if(!sheet)throw Error('Website Applications tab not initialized');
+  const lock=LockService.getScriptLock();lock.waitLock(30000);
+  try{
+   const columns=websiteColumns_(sheet,schema);
+   const row=new Array(Math.max(4,...Object.values(columns))).fill('');
+   row[0]=new Date();row[1]=id;row[2]=JSON.stringify(answers);row[3]=file.getUrl();
+   for(const [questionId,column] of Object.entries(columns)){
+    const value=answers[questionId];
+    if(value!==undefined&&value!==null)row[column-1]=Array.isArray(value)?value.join(', '):String(value);
+   }
+   sheet.appendRow(row);
+  }finally{lock.releaseLock()}
+  return output({ok:true,applicationId:id});
+ }catch(err){console.error(err);return output({ok:false,error:'Submission could not be confirmed'});}
+}
+).test(value);
+   case 'TEXT_CONTAINS_PATTERN':return new RegExp(test).test(value);
+   case 'TEXT_NOT_CONTAINS_PATTERN':return !new RegExp(test).test(value);
+   case 'TEXT_CONTAINS_TEXT':return value.includes(test);
+   case 'TEXT_NOT_CONTAINS_TEXT':return !value.includes(test);
+   case 'TEXT_IS_EMAIL':return /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(value);
+   case 'TEXT_IS_URL':return /^https?:\\/\\/\\S+\\.\\S+/.test(value);
+   case 'TEXT_LENGTH_GREATER_THAN':return value.length>Number(test);
+   case 'TEXT_LENGTH_LESS_THAN':return value.length<Number(test);
+   default:return true;
+  }
+ }catch(e){return false}
 }
 function doPost(e){
  const output=obj=>ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
