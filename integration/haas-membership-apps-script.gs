@@ -157,7 +157,21 @@ function validateAnswer_(q,answer){
  const value=String(answer),test=String(rule.value||'');
  try{
   switch(rule.criterion){
-   case 'TEXT_MATCHES_PATTERN':return new RegExp('^(?:'+test+')
+   case 'TEXT_MATCHES_PATTERN':return new RegExp('^(?:'+test+')$').test(value);
+   case 'TEXT_NOT_MATCHES_PATTERN':return !new RegExp('^(?:'+test+')$').test(value);
+   case 'TEXT_CONTAINS_PATTERN':return new RegExp(test).test(value);
+   case 'TEXT_NOT_CONTAINS_PATTERN':return !new RegExp(test).test(value);
+   case 'TEXT_CONTAINS_TEXT':return value.includes(test);
+   case 'TEXT_NOT_CONTAINS_TEXT':return !value.includes(test);
+   case 'TEXT_IS_EMAIL':return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+   case 'TEXT_IS_URL':return /^https?:\/\/\S+\.\S+/.test(value);
+   case 'TEXT_LENGTH_GREATER_THAN':return value.length>Number(test);
+   case 'TEXT_LENGTH_LESS_THAN':return value.length<Number(test);
+   default:return true;
+  }
+ }catch(e){return false;}
+}
+function doPost(e){
  const output=obj=>ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
  try{
   const p=PropertiesService.getScriptProperties();
